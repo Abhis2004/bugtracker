@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bug Tracker</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      color: #1a1a1a;
+    }
+
+    .tracker {
+      max-width: 580px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1.5rem;
+    }
+    .header-icon {
+      width: 32px;
+      height: 32px;
+      background: #fdecea;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .header-icon svg {
+      width: 16px;
+      height: 16px;
+      stroke: #c0392b;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+    }
+    h2 {
+      font-size: 18px;
+      font-weight: 500;
+      color: #1a1a1a;
+    }
+    .open-count {
+      font-size: 13px;
+      color: #888;
+      margin-left: auto;
+    }
+
+    /* Add Form */
+    .add-form {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .add-form input[type="text"] {
+      flex: 1;
+      min-width: 160px;
+      height: 36px;
+      padding: 0 12px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fff;
+      color: #1a1a1a;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .add-form input[type="text"]:focus {
+      border-color: #aaa;
+      box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
+    }
+    .add-form input::placeholder { color: #bbb; }
+
+    .priority-wrap {
+      position: relative;
+    }
+    .priority-wrap select {
+      height: 36px;
+      padding: 0 28px 0 10px;
+      font-size: 13px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fff;
+      color: #1a1a1a;
+      cursor: pointer;
+      outline: none;
+      appearance: none;
+    }
+    .priority-wrap::after {
+      content: '';
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: 4px solid transparent;
+      border-top-color: #888;
+      margin-top: 2px;
+      pointer-events: none;
+    }
+
+    .btn-add {
+      height: 36px;
+      padding: 0 16px;
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fff;
+      color: #1a1a1a;
+      cursor: pointer;
+      transition: background 0.12s;
+      white-space: nowrap;
+    }
+    .btn-add:hover { background: #f4f4f4; }
+    .btn-add:active { transform: scale(0.98); }
+
+    /* Filters */
+    .filters {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      font-size: 12px;
+      padding: 4px 12px;
+      border: 1px solid #ddd;
+      border-radius: 99px;
+      background: transparent;
+      color: #888;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .filter-btn.active {
+      background: #fff;
+      border-color: #aaa;
+      color: #1a1a1a;
+    }
+    .count-pill {
+      font-size: 11px;
+      background: #f0f0f0;
+      border-radius: 99px;
+      padding: 1px 7px;
+      color: #888;
+      margin-left: 3px;
+    }
+
+    /* Bug Cards */
+    .bugs-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .bug-card {
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: border-color 0.12s;
+    }
+    .bug-card:hover { border-color: #ccc; }
+    .bug-card.closed { opacity: 0.55; }
+
+    /* Priority dot */
+    .priority-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-high   { background: #E24B4A; }
+    .dot-medium { background: #EF9F27; }
+    .dot-low    { background: #639922; }
+    .dot-default { background: #ccc; }
+
+    /* Bug body */
+    .bug-body { flex: 1; min-width: 0; }
+    .bug-title {
+      font-size: 14px;
+      color: #1a1a1a;
+      font-weight: 400;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .bug-card.closed .bug-title {
+      text-decoration: line-through;
+      color: #888;
+    }
+    .bug-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .priority-label { font-size: 11px; color: #999; }
+
+    /* Status badge */
+    .status-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-weight: 500;
+    }
+    .badge-open   { background: #eaf3de; color: #3b6d11; }
+    .badge-closed { background: #f0f0f0; color: #888; }
+
+    /* Action buttons */
+    .bug-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .btn-icon {
+      width: 28px;
+      height: 28px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.12s, border-color 0.12s;
+    }
+    .btn-icon:hover { background: #f4f4f4; }
+    .btn-icon svg {
+      width: 13px;
+      height: 13px;
+      stroke: #888;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .btn-icon.danger:hover { background: #fdecea; border-color: #f5c6c6; }
+    .btn-icon.danger:hover svg { stroke: #c0392b; }
+
+    /* Empty state */
+    .empty {
+      text-align: center;
+      padding: 2rem 0;
+      color: #bbb;
+      font-size: 14px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="tracker">
+  <div class="header">
+    <div class="header-icon">
+      <svg viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M20 12h2M2 12h2M12 4V2M12 22v-2M17 7l1.5-1.5M5.5 18.5 7 17M17 17l1.5 1.5M5.5 5.5 7 7"/>
+      </svg>
+    </div>
+    <h2>Bug tracker</h2>
+    <span class="open-count" id="open-count">0 open</span>
+  </div>
+
+  <div class="add-form">
+    <input type="text" id="bug-title" placeholder="Describe the bug…" />
+    <div class="priority-wrap">
+      <select id="bug-priority">
+        <option value="">Priority</option>
+        <option value="High">High</option>
+        <option value="Medium">Medium</option>
+        <option value="Low">Low</option>
+      </select>
+    </div>
+    <button class="btn-add" onclick="addBug()">Add bug</button>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" onclick="setFilter(this,'all')">All <span class="count-pill" id="cnt-all">0</span></button>
+    <button class="filter-btn" onclick="setFilter(this,'open')">Open <span class="count-pill" id="cnt-open">0</span></button>
+    <button class="filter-btn" onclick="setFilter(this,'closed')">Closed <span class="count-pill" id="cnt-closed">0</span></button>
+  </div>
+
+  <div class="bugs-list" id="bugs-list"></div>
+  <div class="empty" id="empty">No bugs here. Nice work.</div>
+</div>
+
+<!-- Keep your original WebSocket scripts below -->
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+
+<script>
+  let bugs = [];
+  let nextId = 1;
+  let filter = 'all';
+  let stompClient = null;
+
+  /* ── WebSocket ── */
+  function connect() {
+    let socket = new SockJS('/ws');
+    stompClient = Stomp.over(socket);
+    stompClient.connect({}, function () {
+      console.log("Connected");
+      stompClient.subscribe('/topic/bugs', function (data) {
+        bugs = JSON.parse(data.body);
+        render();
+      });
+    });
+  }
+
+  /* ── REST ── */
+  function loadInitialData() {
+    fetch('/bugs')
+      .then(res => res.json())
+      .then(data => { bugs = data; render(); });
+  }
+
+  function addBug() {
+    const title = document.getElementById('bug-title').value.trim();
+    if (!title) return;
+    fetch('/bugs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: title,
+        priority: document.getElementById('bug-priority').value
+      })
+    });
+    document.getElementById('bug-title').value = '';
+    document.getElementById('bug-priority').value = '';
+  }
+
+  function closeBug(id) {
+    const bug = bugs.find(b => b.id === id);
+    if (!bug) return;
+    const newStatus = bug.status === 'Closed' ? 'Open' : 'Closed';
+    fetch('/bugs/' + id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus })
+    });
+  }
+
+  function deleteBug(id) {
+    fetch('/bugs/' + id, { method: 'DELETE' });
+  }
+
+  /* ── Helpers ── */
+  function dotClass(p) {
+    return { High: 'dot-high', Medium: 'dot-medium', Low: 'dot-low' }[p] || 'dot-default';
+  }
+
+  function setFilter(el, f) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    filter = f;
+    render();
+  }
+
+  /* ── Render ── */
+  function render() {
+    const open   = bugs.filter(b => b.status !== 'Closed').length;
+    const closed = bugs.filter(b => b.status === 'Closed').length;
+
+    document.getElementById('open-count').textContent = open + ' open';
+    document.getElementById('cnt-all').textContent    = bugs.length;
+    document.getElementById('cnt-open').textContent   = open;
+    document.getElementById('cnt-closed').textContent = closed;
+
+    const visible = bugs.filter(b =>
+      filter === 'all'    ? true :
+      filter === 'open'   ? b.status !== 'Closed' :
+                            b.status === 'Closed'
+    );
+
+    const list  = document.getElementById('bugs-list');
+    const empty = document.getElementById('empty');
+
+    if (visible.length === 0) {
+      list.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    list.innerHTML = visible.map(b => `
+      <div class="bug-card ${b.status === 'Closed' ? 'closed' : ''}">
+        <div class="priority-dot ${dotClass(b.priority)}"></div>
+        <div class="bug-body">
+          <div class="bug-title">${b.title}</div>
+          <div class="bug-meta">
+            ${b.priority ? `<span class="priority-label">${b.priority}</span>` : ''}
+            <span class="status-badge ${b.status === 'Closed' ? 'badge-closed' : 'badge-open'}">${b.status || 'Open'}</span>
+          </div>
+        </div>
+        <div class="bug-actions">
+          <button class="btn-icon" title="${b.status === 'Closed' ? 'Reopen' : 'Close'}" onclick="closeBug(${b.id})">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          </button>
+          <button class="btn-icon danger" title="Delete" onclick="deleteBug(${b.id})">
+            <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+          </button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  /* ── Start ── */
+  connect();
+  loadInitialData();
+</script>
+
+</body>
+</html>
